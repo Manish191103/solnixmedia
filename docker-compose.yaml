@@ -9,7 +9,6 @@ services:
     container_name: wordpressdb    
     restart: unless-stopped
     command: [
-        '--default_authentication_plugin=mysql_native_password',
         '--character-set-server=utf8mb4',
         '--collation-server=utf8mb4_unicode_ci'
     ]    
@@ -41,7 +40,6 @@ services:
     ports:
       - "8082:80"
       - "8443:443"
-    restart: unless-stopped
     environment:
       WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
       WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
