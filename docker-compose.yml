@@ -1,0 +1,49 @@
+# Use version 3.1 of Docker Compose file format
+version: '3.1'
+
+services:
+
+  # Database service
+  db:
+    image: mysql:5.7
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --lower_case_table_names=1
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p$$DATABASE_ROOT_PASSWORD" ]
+      timeout: 20s
+      retries: 10
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql      
+
+  # WordPress service
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    volumes:
+      - ./html:/var/www/html
+      - ./php.ini:/usr/local/etc/php/php.ini
+    ports:
+      - "8082:80"
+      - "8443:443"
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+
+volumes:
+  dbdata:
+  wordpress:      
