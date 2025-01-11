@@ -6,7 +6,13 @@ services:
   # Database service
   db:
     image: mysql:latest
+    container_name: wordpressdb    
     restart: unless-stopped
+    command: [
+        '--default_authentication_plugin=mysql_native_password',
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci'
+    ]    
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -19,16 +25,19 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - dbdata:/var/lib/mysql      
+      - ./wp-data:/docker-entrypoint-initdb.d
+      - dbdata:/var/lib/mysql     
 
   # WordPress service
   wordpress:
     depends_on:
       - db
     image: wordpress:latest
+    container_name: wordpress-app    
+    restart: unless-stopped    
     volumes:
       - wordpress_data:/var/www/html
-      - ./php.ini:/usr/local/etc/php/php.ini
+      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
     ports:
       - "8082:80"
       - "8443:443"
@@ -38,6 +47,8 @@ services:
       WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
       WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
       WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      VIRTUAL_HOST: solnixmedia.com,www.solnixmedia.com      
+  
 
 volumes:
   dbdata:
