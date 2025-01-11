@@ -24,7 +24,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./wp-data:/docker-entrypoint-initdb.d
+      - ./wordpress_data::/docker-entrypoint-initdb.d
       - dbdata:/var/lib/mysql     
 
   # WordPress service
