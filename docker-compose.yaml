@@ -16,8 +16,6 @@ services:
       MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
     volumes:
       - db-data:/var/lib/mysql
-    networks:
-      - solnix.n1.s1
 
   phpmyadmin:
     depends_on:
@@ -30,8 +28,6 @@ services:
     environment:
       PMA_HOST: database
       MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
-    networks:
-      - solnix.n1.s1
 
   wordpress:
     depends_on:
@@ -48,12 +44,6 @@ services:
       WORDPRESS_DB_PASSWORD: '${WORDPRESS_DB_PASSWOR}'
     volumes:
       - ./wp-content:/var/www/html/wp-content
-    networks:
-      - solnix.n1.s1
 
 volumes:
   db-data:
-
-networks:
-  solnix.n1.s1:
-    driver: bridge     
