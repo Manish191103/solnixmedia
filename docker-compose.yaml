@@ -18,10 +18,6 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - solnix.n1.s1
-    deploy:
-      resources:
-        limits:
-          memory: 2048m
 
   phpmyadmin:
     depends_on:
