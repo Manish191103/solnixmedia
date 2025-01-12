@@ -1,49 +1,63 @@
-version: '3.1'
+version: "3.8"
 
 services:
 
-  # Database service
-  db:
-    image: mysql:latest
-    container_name: wordpressdb    
+  database:
+    # We use a mariadb image which supports both amd64 & arm64 architecture
+    image: mariadb:10.6.4-focal
     restart: unless-stopped
-    command: [
-        '--character-set-server=utf8mb4',
-        '--collation-server=utf8mb4_unicode_ci'
-    ]    
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
-      timeout: 20s
-      retries: 10
     ports:
-      - "3306:3306"
+      - 3306:3306
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+      MYSQL_DATABASE: '${MYSQL_DATABASE}'
+      MYSQL_USER: '${MYSQL_USER}'
+      MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
     volumes:
-      - dbdata:/var/lib/mysql
+      - db-data:/var/lib/mysql
+    networks:
+      - solnix.n1.s1
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
 
-  # WordPress service
+  phpmyadmin:
+    depends_on:
+      - database
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    ports:
+      - 8081:80
+    env_file: .env
+    environment:
+      PMA_HOST: database
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+    networks:
+      - solnix.n1.s1
+
   wordpress:
     depends_on:
-      - db
-    image: wordpress:latest
-    container_name: wordpress-app    
-    restart: unless-stopped    
-    volumes:
-      - wordpress_data:/var/www/html
-      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
+      - database
+    image: wordpress:6.2.2-apache
+    restart: unless-stopped
     ports:
-      - "8082:80"
-      - "8443:443"
+      - 8080:80
+    env_file: .env
     environment:
-      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
-      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
-      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
-      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_DB_HOST: database:3306 # use the same name as database service
+      WORDPRESS_DB_NAME: '${WORDPRESS_DB_NAME}'
+      WORDPRESS_DB_USER: '${WORDPRESS_DB_USER}'
+      WORDPRESS_DB_PASSWORD: '${WORDPRESS_DB_PASSWOR}'
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    networks:
+      - solnix.n1.s1
 
 volumes:
-  dbdata:
-  wordpress_data:
+  db-data:
+
+networks:
+  solnix.n1.s1:
+    driver: bridge     
