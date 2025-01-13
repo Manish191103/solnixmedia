@@ -21,7 +21,7 @@ services:
         - CMD
         - mysqladmin
         - ping
-        - '--host=127.0.0.1'
+        - '--host=127.0.0.1:3306'
       interval: 5s
       timeout: 20s
       retries: 10   
@@ -42,7 +42,7 @@ services:
         - CMD
         - curl
         - '-f'
-        - 'http://127.0.0.1'
+        - 'http://127.0.0.1:8081'
       interval: 5s
       timeout: 20s
       retries: 10
@@ -68,7 +68,7 @@ services:
         - CMD
         - curl
         - '-f'
-        - 'http://127.0.0.1'
+        - 'http://127.0.0.1:8082'
       interval: 2s
       timeout: 10s
       retries: 10      
