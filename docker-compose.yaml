@@ -1,11 +1,19 @@
 version: "3.8"
 
-services:
+# Define custom networks for better isolation
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true  # Restrict external access
 
+services:
   database:
-    # We use a mariadb image which supports both amd64 & arm64 architecture
     image: mariadb:11
     restart: unless-stopped
+    networks:
+      - backend
     ports:
       - 3306:3306
     env_file: .env
@@ -24,13 +32,27 @@ services:
         - '--host=127.0.0.1:3306'
       interval: 5s
       timeout: 20s
-      retries: 10   
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   phpmyadmin:
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     image: phpmyadmin/phpmyadmin
     restart: unless-stopped
+    networks:
+      - frontend
+      - backend
     ports:
       - 8081:80
     env_file: .env
@@ -46,23 +68,32 @@ services:
       interval: 5s
       timeout: 20s
       retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   wordpress:
     depends_on:
-      - database
-    image: 'wordpress:latest'
-    restart: 'unless-stopped'
+      database:
+        condition: service_healthy
+    image: wordpress:latest
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
     ports:
       - 8082:80
     env_file: .env
     environment:
-      WORDPRESS_DB_HOST: '${WORDPRESS_DB_HOST}' # use the same name as database service
+      WORDPRESS_DB_HOST: '${WORDPRESS_DB_HOST}'
       WORDPRESS_DB_NAME: '${WORDPRESS_DB_NAME}'
       WORDPRESS_DB_USER: '${WORDPRESS_DB_USER}'
       WORDPRESS_DB_PASSWORD: '${WORDPRESS_DB_PASSWORD}'
     volumes:
       - ./wp-content:/var/www/html/wp-content
-      - 'db-data:/var/www/html'      
+      - db-data:/var/www/html
     healthcheck:
       test:
         - CMD
@@ -71,7 +102,18 @@ services:
         - 'http://127.0.0.1:8082'
       interval: 2s
       timeout: 10s
-      retries: 10      
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
 
 volumes:
-  db-data: { }
+  db-data:
+    driver: local
