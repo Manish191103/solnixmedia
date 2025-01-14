@@ -56,10 +56,10 @@ services:
       - 8082:80
     env_file: .env
     environment:
-      WORDPRESS_DB_HOST: database:3306 # use the same name as database service
+      WORDPRESS_DB_HOST: '${WORDPRESS_DB_HOST}' # use the same name as database service
       WORDPRESS_DB_NAME: '${WORDPRESS_DB_NAME}'
       WORDPRESS_DB_USER: '${WORDPRESS_DB_USER}'
-      WORDPRESS_DB_PASSWORD: '${WORDPRESS_DB_PASSWOR}'
+      WORDPRESS_DB_PASSWORD: '${WORDPRESS_DB_PASSWORD}'
     volumes:
       - ./wp-content:/var/www/html/wp-content
       - 'db-data:/var/www/html'      
