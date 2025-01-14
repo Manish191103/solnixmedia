@@ -1,16 +1,16 @@
-version: "3.8"
+version: '3.8'
 
-# Define custom networks for better isolation
 networks:
   frontend:
     driver: bridge
   backend:
     driver: bridge
-    internal: true  # Restrict external access
+    internal: true
 
 services:
   database:
-    image: mariadb:11
+    container_name: solnix-db
+    image: mariadb:10.11
     restart: unless-stopped
     networks:
       - backend
@@ -25,14 +25,11 @@ services:
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
-      test:
-        - CMD
-        - mysqladmin
-        - ping
-        - '--host=127.0.0.1:3306'
-      interval: 5s
-      timeout: 20s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 30s
+      retries: 20
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
@@ -45,6 +42,7 @@ services:
           memory: 1G
 
   phpmyadmin:
+    container_name: solnix-pma
     depends_on:
       database:
         condition: service_healthy
@@ -59,15 +57,13 @@ services:
     environment:
       PMA_HOST: database
       MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+      PMA_ARBITRARY: 1
     healthcheck:
-      test:
-        - CMD
-        - curl
-        - '-f'
-        - 'http://127.0.0.1:8081'
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 5s
       timeout: 20s
       retries: 10
+      start_period: 10s
     logging:
       driver: "json-file"
       options:
@@ -75,6 +71,7 @@ services:
         max-file: "3"
 
   wordpress:
+    container_name: solnix-wp
     depends_on:
       database:
         condition: service_healthy
@@ -91,18 +88,19 @@ services:
       WORDPRESS_DB_NAME: '${WORDPRESS_DB_NAME}'
       WORDPRESS_DB_USER: '${WORDPRESS_DB_USER}'
       WORDPRESS_DB_PASSWORD: '${WORDPRESS_DB_PASSWORD}'
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_MEMORY_LIMIT', '256M');
+        define('WP_MAX_MEMORY_LIMIT', '512M');
     volumes:
       - ./wp-content:/var/www/html/wp-content
-      - db-data:/var/www/html
+      - wp-data:/var/www/html
+      - ./wordpress/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     healthcheck:
-      test:
-        - CMD
-        - curl
-        - '-f'
-        - 'http://127.0.0.1:8082'
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 2s
       timeout: 10s
       retries: 10
+      start_period: 10s
     logging:
       driver: "json-file"
       options:
@@ -116,4 +114,6 @@ services:
 
 volumes:
   db-data:
+    driver: local
+  wp-data:
     driver: local
